@@ -77,35 +77,32 @@ export function drawTitle(ctx, Sc) {
 export function drawLobbyTop(ctx, Sc, opts) {
   const { w } = Sc;
   const hits = [];
-  const bh = 44;
-  const y = 6;
-  const label = 'SPEED';
-  ctx.font = `800 12px ${FONT}`;
+  const y = 8;
+  const hh = 40;
   const segW = clamp(w * 0.14, 84, 130);
   const n = opts.options.length;
-  const total = n * segW + (n - 1) * 4;
-  const x0 = w / 2 - total / 2;
-  text(ctx, label, w / 2, y - 0.5, 10, { align: 'center', color: '#9fc4ff', outline: 0, base: 'top' });
-  const yy = y + 12;
-  const hh = bh - 12;
+  const total = opts.host ? n * segW + (n - 1) * 4 : segW;
+  const x0 = w / 2 - total / 2 + 24;
+  if (x0 - 12 - 44 >= 136) text(ctx, 'SPEED', x0 - 12, y + hh / 2, 12, { align: 'right', color: '#9fc4ff', outline: 0.1 }); // not under the platform's buttons
   opts.options.forEach((o, i) => {
-    const x = x0 + i * (segW + 4);
     const on = o.value === opts.speed;
-    if (opts.host) hits.push({ rect: { x, y: y - 4, w: segW, h: bh + 4 }, value: o.value });
+    if (!opts.host && !on) return;
+    const x = x0 + (opts.host ? i * (segW + 4) : 0);
+    if (opts.host) hits.push({ rect: { x, y: y - 4, w: segW, h: hh + 8 }, value: o.value });
     if (on) {
       ctx.fillStyle = ACCENT;
-      ctx.fillRect(x, yy, segW, hh);
-      text(ctx, o.label.toUpperCase(), x + segW / 2, yy + hh / 2 + 0.5, hh * 0.58, { align: 'center', color: INK, italic: true, weight: 900, outline: 0 });
-    } else if (opts.host) {
+      ctx.fillRect(x, y, segW, hh);
+      text(ctx, o.label.toUpperCase(), x + segW / 2, y + hh / 2 + 0.5, hh * 0.52, { align: 'center', color: INK, italic: true, weight: 900, outline: 0 });
+    } else {
       ctx.fillStyle = 'rgba(4,9,26,0.82)';
-      ctx.fillRect(x, yy, segW, hh);
+      ctx.fillRect(x, y, segW, hh);
       ctx.strokeStyle = rgba(ACCENT, 0.5);
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 0.5, yy + 0.5, segW - 1, hh - 1);
-      text(ctx, o.label.toUpperCase(), x + segW / 2, yy + hh / 2 + 0.5, hh * 0.52, { align: 'center', color: '#bcd4ff', weight: 800, outline: 0 });
+      ctx.strokeRect(x + 0.5, y + 0.5, segW - 1, hh - 1);
+      text(ctx, o.label.toUpperCase(), x + segW / 2, y + hh / 2 + 0.5, hh * 0.46, { align: 'center', color: '#bcd4ff', weight: 800, outline: 0 });
     }
   });
-  text(ctx, 'CLEAR LINES TO ATTACK', w / 2, yy + hh + 12, 12, { align: 'center', color: '#c8dcff', outline: 0.12 });
+  text(ctx, 'CLEAR LINES TO ATTACK', w / 2, y + hh + 11, 12, { align: 'center', color: '#c8dcff', outline: 0.12 });
   return { speed: hits };
 }
 
@@ -242,7 +239,7 @@ export function drawResults(ctx, Sc, R, age, bottomClear = 100) {
   const y = top + (1 - t) * -30;
   ctx.save();
   ctx.globalAlpha = t;
-  ctx.fillStyle = 'rgba(3,8,24,0.9)';
+  ctx.fillStyle = 'rgba(3,8,24,0.92)';
   ctx.fillRect(x, y, cw, ch);
   ctx.fillStyle = ACCENT;
   ctx.fillRect(x, y, cw, 3);
@@ -252,44 +249,48 @@ export function drawResults(ctx, Sc, R, age, bottomClear = 100) {
 
   const compact = ch < 260;
   const colW = Math.min(150, (cw - 40) / 3);
-  const base = y + ch - (compact ? 56 : 92);
-  const heights = [compact ? 74 : 110, compact ? 52 : 80, compact ? 40 : 62]; // 1st, 2nd, 3rd plinth heights
+  const pb = y + ch * 0.6; // where the plinths end
+  const heights = compact ? [50, 36, 26] : [110, 80, 62]; // 1st, 2nd, 3rd
+  const r = compact ? 17 : 26;
+  const block = compact ? 28 : 40; // name and points between a head and its plinth
   const order = [1, 0, 2]; // left to right: 2nd, 1st, 3rd
-  const r = clamp(colW * 0.2, 14, 28);
   for (let slot = 0; slot < 3; slot++) {
     const idx = order[slot];
     const row = R.rows[idx];
     const px = cx + (slot - 1) * (colW + 6);
     const ph = heights[idx];
+    const pt = pb - ph;
     ctx.fillStyle = rgba(PLINTH[idx], 0.2);
-    ctx.fillRect(px - colW / 2, base - ph + (compact ? 24 : 36), colW, ph);
+    ctx.fillRect(px - colW / 2, pt, colW, ph);
     ctx.fillStyle = PLINTH[idx];
-    ctx.fillRect(px - colW / 2, base - ph + (compact ? 24 : 36), colW, 3);
-    text(ctx, String(idx + 1), px, base - ph + (compact ? 24 : 36) + ph * 0.5, ph * 0.5, { align: 'center', color: rgba(PLINTH[idx], 0.55), italic: true, weight: 900, outline: 0 });
+    ctx.fillRect(px - colW / 2, pt, colW, 3);
+    text(ctx, String(idx + 1), px, pt + ph * 0.55, ph * 0.55, { align: 'center', color: rgba(PLINTH[idx], 0.5), italic: true, weight: 900, outline: 0 });
     if (!row) continue;
-    const hy = base - ph + (compact ? 24 : 36) - r - (compact ? 22 : 30);
-    const lift = idx === 0 ? Math.sin(Sc.time * 3) * (Sc.reduced ? 0 : 2) : 0;
+    const hy = pt - r - block;
+    const lift = idx === 0 && !Sc.reduced ? Math.sin(Sc.time * 3) * 2 : 0;
     drawHead(ctx, row.id, row.name, row.color, px, hy + lift, r, row.bot);
-    ctx.font = `800 ${compact ? 12 : 14}px ${FONT}`;
-    text(ctx, fit(ctx, String(row.name).toUpperCase(), colW - 6), px, hy + r + (compact ? 10 : 13), compact ? 12 : 14, { align: 'center', outline: 0.14 });
-    text(ctx, `${row.pts}`, px, hy + r + (compact ? 24 : 31), compact ? 13 : 16, { align: 'center', color: PLINTH[idx], italic: true, weight: 900, outline: 0.12 });
+    const fs = compact ? 12 : 15;
+    ctx.font = `800 ${fs}px ${FONT}`;
+    text(ctx, fit(ctx, String(row.name).toUpperCase(), colW - 6), px, hy + r + fs * 0.9, fs, { align: 'center', outline: 0.14 });
+    text(ctx, `${row.pts}`, px, hy + r + fs * 0.9 + fs * 1.15, fs + 1, { align: 'center', color: PLINTH[idx], italic: true, weight: 900, outline: 0.12 });
   }
   // you, when you are not on the podium
-  const ly = y + ch - (compact ? 40 : 66);
+  const ly = y + ch * 0.74;
   if (R.me && R.me.place > 3) {
-    text(ctx, `YOU: ${ordinal(R.me.place)}`, cx, ly + 6, compact ? 18 : 24, { align: 'center', color: '#ffe14d', italic: true, weight: 900 });
-    text(ctx, `${R.me.pts} PTS   ${R.me.kos} KO`, cx, ly + (compact ? 24 : 32), compact ? 11 : 13, { align: 'center', color: '#c8dcff', outline: 0.1 });
+    text(ctx, `YOU: ${ordinal(R.me.place)}`, cx, ly, compact ? 18 : 26, { align: 'center', color: '#ffe14d', italic: true, weight: 900 });
+    text(ctx, `${R.me.pts} PTS   ${R.me.kos} KO`, cx, ly + (compact ? 20 : 30), compact ? 11 : 14, { align: 'center', color: '#c8dcff', outline: 0.1 });
   } else if (R.me) {
-    text(ctx, `${R.me.pts} PTS   ${R.me.kos} KO`, cx, ly + 12, compact ? 12 : 15, { align: 'center', color: '#c8dcff', outline: 0.1 });
+    text(ctx, `${R.me.pts} PTS   ${R.me.kos} KO`, cx, ly + (compact ? 4 : 8), compact ? 12 : 16, { align: 'center', color: '#c8dcff', outline: 0.1 });
   }
   // awards
   if (R.awards.length > 0) {
     const ay = y + ch - (compact ? 12 : 18);
-    const each = Math.min(220, (cw - 20) / R.awards.length);
+    const each = Math.min(240, (cw - 20) / R.awards.length);
     R.awards.forEach((a, i) => {
       const ax = cx + (i - (R.awards.length - 1) / 2) * each;
-      ctx.font = `800 ${compact ? 10 : 11}px ${FONT}`;
-      text(ctx, fit(ctx, `${a.label}: ${String(a.name).toUpperCase()}`, each - 8), ax, ay, compact ? 10 : 11, { align: 'center', color: '#9fc4ff', outline: 0.1 });
+      const fs = compact ? 10 : 12;
+      ctx.font = `800 ${fs}px ${FONT}`;
+      text(ctx, fit(ctx, `${a.label}: ${String(a.name).toUpperCase()}`, each - 8), ax, ay, fs, { align: 'center', color: '#9fc4ff', outline: 0.1 });
     });
   }
   ctx.restore();

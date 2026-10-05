@@ -40,7 +40,6 @@ async function boot() {
   }
   // Join first, before anything heavy is built, so a reload doesn't miss its seat.
   let room;
-  let offline = standalone;
   try {
     room = await ow.rooms.join({
       maxPlayers: MAX_PLAYERS,
@@ -51,7 +50,6 @@ async function boot() {
   } catch (err) {
     console.error('could not join a room', err);
     room = standalone ? ow.room : makeStubRoom(() => ow.now());
-    offline = true;
   }
   try {
     document.fonts?.load('800 40px "Exo 2"');
@@ -59,7 +57,7 @@ async function boot() {
   } catch {
     // fonts are only for looks
   }
-  run(ow, room, room.kind === 'solo' && typeof room.tick === 'function' ? room : null, offline);
+  run(ow, room, room.kind === 'solo' && typeof room.tick === 'function' ? room : null);
 }
 
 const STEP = 1000 / 60;
@@ -94,7 +92,7 @@ function clearShift(rows) {
   return shift;
 }
 
-function run(ow, room, tickable, offline) {
+function run(ow, room, tickable) {
   const ctx = canvas.getContext('2d');
   const audio = createAudio();
   const input = createInput(ow);
@@ -127,7 +125,6 @@ function run(ow, room, tickable, offline) {
     started: false, // PLAY was tapped
     mode: 'title',
     acc: 0,
-    last: 0,
     eng: null, // this page's board
     engKey: '',
     engKind: '', // 'practice' | 'match'
@@ -163,7 +160,6 @@ function run(ow, room, tickable, offline) {
     wasPlaying: false,
     lastPublish: -99,
     controls: '',
-    dangerAt: -99,
     featured: '',
     overAt: -99,
     overSeen: '',
@@ -226,6 +222,7 @@ function run(ow, room, tickable, offline) {
     fx.clear();
     S.views.clear();
     S.featured = '';
+    if (!S.started) room.hideLobby(true); // the bar comes back with the lobby; the title has none
   });
   room.on('starting', () => {
     S.results = null;
@@ -519,7 +516,10 @@ function run(ow, room, tickable, offline) {
         const B = lay().board;
         fx.burst(B.x - lay().c * 2.5, B.y + lay().c * 2, 6, { colors: ['#9fc4ff', '#ffffff'], speed: 90, life: 0.4, size: 3, g: 0 });
       }
-      if (e.ko) break;
+      if (e.ko) {
+        myKo(room.matchNow()); // the held piece had no room to come back
+        break;
+      }
     }
     for (let i = 0; i < inp.hard && !e.ko; i++) {
       const res = e.hardDrop();
@@ -533,7 +533,7 @@ function run(ow, room, tickable, offline) {
     let canPlay = false;
     const e = S.eng;
     if (S.started && e && !e.ko && room.connected) {
-      if (S.engKind === 'practice') canPlay = S.mode === 'lobby';
+      if (S.engKind === 'practice') canPlay = S.mode === 'lobby' && !(S.results && Sc.time < S.cardUntil);
       else if (S.engKind === 'match') canPlay = room.running && m.phase === 'playing' && g !== null && g.phase === 'play' && S.engSpawned;
     }
     const inp = input.poll(ms, canPlay);
@@ -572,7 +572,6 @@ function run(ow, room, tickable, offline) {
     const ld = S.lobbyDemo;
     if (ld && S.mode === 'lobby') {
       ld.bm.step(ms);
-      ld.bm.t = Math.min(ld.bm.t, 25000);
     }
   }
 
@@ -1010,7 +1009,8 @@ function run(ow, room, tickable, offline) {
       return;
     }
     S.hit.speed = [];
-    ui.drawYouTag(ctx, sc);
+    const mine = S.mainId === meId;
+    if (mine) ui.drawYouTag(ctx, sc);
     const m = room.match;
     if (mode === 'count') {
       const left = (fin(m.startsAt, Date.now()) - ow.now()) / 1000;
@@ -1030,7 +1030,7 @@ function run(ow, room, tickable, offline) {
     }
     if (mode === 'play') {
       if (ms < 800) ui.drawCountdown(ctx, sc, -ms / 1000); // GO
-      if (room.isParticipant(meId)) ui.drawYouArrow(ctx, sc, ms / 1000);
+      if (mine && room.isParticipant(meId)) ui.drawYouArrow(ctx, sc, ms / 1000);
       ui.drawBanner(ctx, sc, 'LAST BOARD WINS', ms / 1000 - 0.7);
       if (S.eng && S.eng.ko && S.engKind === 'match' && Sc.time - S.koAt < 2.4 && g) {
         const place = g.out.includes(meId) ? g.roster.length - g.out.indexOf(meId) : g.roster.length - g.out.length;
@@ -1084,7 +1084,6 @@ function run(ow, room, tickable, offline) {
 
   net.adopt();
   requestAnimationFrame(frame);
-  void offline;
 }
 
 if (posterName) {

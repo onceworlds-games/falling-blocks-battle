@@ -233,9 +233,12 @@ function drawMainBoard(ctx, Sc, v) {
         const fall = Math.max(0, koAge - 0.25 - k * 0.5);
         py += fall * fall * c * 7;
         px += (k - 0.5) * fall * c * 2.5;
-        ctx.globalAlpha = clamp(1 - fall * 0.7, 0, 1) * 0.85;
-        drawBlock(ctx, px, py, c, 8, Sc.pr, true);
-        ctx.globalAlpha = 1;
+        const a = clamp(1 - fall * 0.7, 0, 1) * 0.85;
+        if (a > 0.02) {
+          ctx.globalAlpha = a;
+          drawBlock(ctx, px, py, c, 8, Sc.pr, true);
+          ctx.globalAlpha = 1;
+        }
         continue;
       }
       drawBlock(ctx, px, py, c, t, Sc.pr, Sc.busy);

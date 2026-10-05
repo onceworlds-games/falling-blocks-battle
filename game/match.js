@@ -138,9 +138,11 @@ export class BotMatch {
   /** Advance every bot by dt ms. */
   step(dt) {
     this.t += dt;
-    const g = gravityAt(this.speed, this.t);
-    const due = suddenDue(this.t);
-    const slow = warmUp(this.t);
+    // A practice table stays at an easy pace for ever; a real one speeds up and, late on, turns on sudden death.
+    const gt = this.isolated ? Math.min(this.t, 25000) : this.t;
+    const g = gravityAt(this.speed, gt);
+    const due = suddenDue(gt);
+    const slow = warmUp(gt);
     for (const b of this.bots) {
       const e = b.engine;
       if (e.ko) {

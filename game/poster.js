@@ -27,14 +27,6 @@ export const POSTER_SIZES = {
 
 const STEP = 1000 / 60;
 
-/** Eight bots that have played for `secs` seconds on their own (no garbage, nobody out): natural-looking stacks, always the same. */
-function simulate(seed, secs, n = 8) {
-  const roster = buildRoster([], seed, n);
-  const bm = new BotMatch({ seed, roster, speed: 'normal', t: 30000, isolated: true });
-  for (let t = 0; t < secs * 1000; t += STEP) bm.step(STEP);
-  return { roster, bm };
-}
-
 /** The step of a simulation at which bot `idx` has a stack at least `rows` high (else just the end). */
 function simulateTall(seed, idx, rows, maxSecs = 90) {
   const roster = buildRoster([], seed, 8);

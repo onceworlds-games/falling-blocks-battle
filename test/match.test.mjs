@@ -220,3 +220,21 @@ test('boards stay inside the field whatever garbage does to them', () => {
   checkBoards(bm, 'under a garbage storm');
   for (const b of bm.bots) assert.ok(b.engine.board.maxHeight() <= ROWS);
 });
+
+test('a practice table keeps going: a bot that tops out starts again, and the pace never runs away', () => {
+  const roster = buildRoster([], 5, 7);
+  const bm = new BotMatch({ seed: 5, roster, speed: 'fast', t: 5000, isolated: true });
+  let restarts = 0;
+  const gens = new Map(bm.bots.map((b) => [b.id, b.gen]));
+  for (let i = 0; i < 60 * 600; i++) {
+    bm.step(STEP);
+    for (const b of bm.bots) if (b.gen !== gens.get(b.id)) {
+      restarts++;
+      gens.set(b.id, b.gen);
+    }
+  }
+  assert.ok(restarts >= 1, `${restarts} restarts in ten minutes`);
+  assert.ok(bm.bots.filter((b) => !b.engine.ko).length >= 3, 'most of them are playing at any time');
+  for (const b of bm.bots) assert.ok(b.engine.gravity <= 20 * 0.45 + 1e-9 || b.engine.gravity < 6, `gravity ${b.engine.gravity}`);
+  checkBoards(bm, 'practice');
+});

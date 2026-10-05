@@ -161,7 +161,10 @@ export function createAudio() {
           const d = noise.getChannelData(0);
           for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
         }
-        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        if (ctx.state === 'suspended') {
+          const r = ctx.resume();
+          if (r && typeof r.catch === 'function') r.catch(() => {});
+        }
         if (!timer) {
           nextTime = ctx.currentTime + 0.1;
           t0 = nextTime;
