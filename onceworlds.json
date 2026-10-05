@@ -1,0 +1,86 @@
+{
+  "slug": "falling-blocks-battle",
+  "name": "Falling Blocks Battle",
+  "description": "Clear lines to bury your rivals in garbage. Last board standing wins.",
+  "dir": "game",
+  "genre": "Puzzle",
+  "icon": "store/icon.png",
+  "thumbnails": [
+    "store/thumb-1.png",
+    "store/thumb-2.png",
+    "store/thumb-3.png"
+  ],
+  "badges": [
+    {
+      "id": "first-win",
+      "name": "First Win",
+      "description": "Win a match.",
+      "icon": "store/badge-first-win.png"
+    },
+    {
+      "id": "four-lines",
+      "name": "Four Lines",
+      "description": "Clear 4 lines at once.",
+      "icon": "store/badge-four-lines.png"
+    },
+    {
+      "id": "combo-5",
+      "name": "Combo 5",
+      "description": "Make a 5-combo.",
+      "icon": "store/badge-combo-5.png"
+    },
+    {
+      "id": "t-spin",
+      "name": "T-Spin",
+      "description": "Clear a line with a T-spin.",
+      "icon": "store/badge-t-spin.png"
+    }
+  ],
+  "controls": [
+    {
+      "keys": [
+        "A",
+        "D",
+        "Left",
+        "Right"
+      ],
+      "action": "Move"
+    },
+    {
+      "keys": [
+        "S",
+        "Down"
+      ],
+      "action": "Soft drop"
+    },
+    {
+      "keys": [
+        "Space",
+        "W",
+        "Up"
+      ],
+      "action": "Hard drop"
+    },
+    {
+      "keys": [
+        "X",
+        "K"
+      ],
+      "action": "Rotate right"
+    },
+    {
+      "keys": [
+        "Z",
+        "J"
+      ],
+      "action": "Rotate left"
+    },
+    {
+      "keys": [
+        "C",
+        "Shift"
+      ],
+      "action": "Hold"
+    }
+  ]
+}
