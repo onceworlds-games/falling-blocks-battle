@@ -984,6 +984,7 @@ function run(ow, room, tickable) {
     const ids = Sc.minis;
     for (let i = 0; i < ids.length; i++) if (Sc.L.slots[i] && ids[i]) S.slotOf.set(ids[i].id, Sc.L.slots[i]);
     // main-board animation: the clear and lock marks live on the view; minis don't get them
+    fx.timeScale = mode === 'over' && Sc.time - S.overAt < 1.4 ? 0.4 : 1; // the last knockout plays in slow motion
     fx.update(dt);
     Sc.shake = fx.offset(Sc.time);
     syncControls();

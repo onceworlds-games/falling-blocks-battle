@@ -375,6 +375,17 @@ function drawMini(ctx, Sc, v, slot) {
   }
   // the frame: their colour; red and pulsing when they are sending garbage my way
   const pulse = Sc.reduced ? 0.5 : 0.5 + 0.5 * Math.sin(Sc.time * 7);
+  // a stack nearly at the top: a red glow along it (they are about to go)
+  if (cells && !ko) {
+    let high = false;
+    for (let i = HIDDEN * COLS; i < (HIDDEN + 4) * COLS && !high; i++) high = cells[i] !== 0;
+    if (high) {
+      ctx.fillStyle = `rgba(255,59,78,${0.18 + 0.22 * pulse})`;
+      ctx.fillRect(bx - 2, by - 2, bw + 4, Math.max(4, mc * 4));
+      ctx.fillStyle = `rgba(255,59,78,${0.6 + 0.4 * pulse})`;
+      ctx.fillRect(bx - 2, by - 2, bw + 4, 2);
+    }
+  }
   ctx.lineWidth = 1;
   ctx.strokeStyle = rgba(ko ? '#586179' : color, ko ? 0.5 : 0.55);
   ctx.strokeRect(bx - 2.5, by - 2.5, bw + 5, bh + 5);

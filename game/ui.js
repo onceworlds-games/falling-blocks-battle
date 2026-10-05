@@ -147,27 +147,29 @@ export function drawBanner(ctx, Sc, str, age, dur = 2.2) {
   ctx.restore();
 }
 
-/** A bouncing arrow and "YOU" above the board at the start of a match. */
-export function drawYouArrow(ctx, Sc, age, dur = 3.2) {
+/** A bouncing arrow and "YOU" in the top of your board at the start of a match (the board is empty then). */
+export function drawYouArrow(ctx, Sc, age, dur = 2.6) {
   if (age < 0 || age > dur) return;
   const B = Sc.L.board;
+  const c = Sc.L.c;
   const fade = age > dur - 0.5 ? clamp((dur - age) / 0.5, 0, 1) : 1;
-  const bob = Sc.reduced ? 0 : Math.abs(Math.sin(age * 5)) * 8;
+  const bob = Sc.reduced ? 0 : Math.abs(Math.sin(age * 5)) * c * 0.5;
   const cx = B.x + B.w / 2;
-  const y = Math.max(12, B.y - 16 - bob);
+  const half = Math.max(10, c * 0.8);
+  const tip = B.y + c * 5.2 + bob;
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.fillStyle = '#ffe14d';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(cx - 12, y - 12);
-  ctx.lineTo(cx + 12, y - 12);
-  ctx.lineTo(cx, y + 4);
+  ctx.moveTo(cx - half, tip - half * 1.5);
+  ctx.lineTo(cx + half, tip - half * 1.5);
+  ctx.lineTo(cx, tip);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  text(ctx, 'YOU', cx, y - 24, 15, { align: 'center', color: '#ffe14d', italic: true, weight: 900 });
+  text(ctx, 'YOU', cx, tip - half * 1.5 - c * 0.9, Math.max(16, c * 1.1), { align: 'center', color: '#ffe14d', italic: true, weight: 900 });
   ctx.restore();
 }
 

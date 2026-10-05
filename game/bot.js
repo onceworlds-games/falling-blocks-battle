@@ -1,4 +1,4 @@
-// The bots: a classic placement AI. For the falling piece (and the hold) it finds every spot the piece can reach, including tucks
+// The bots: a classic placement player. For the falling piece (and the hold) it finds every spot the piece can reach, including tucks
 // and T-spin turns (a breadth-first search over moves, not just rotation x column), scores the board each would leave with a
 // weighted sum (heights, holes, bumpiness, lines, a well for quads, T-spins for strong bots), and plays the best with a human's
 // pace: a think, then one key at a time. Weak bots add noise to their scores and sometimes take a worse spot.
