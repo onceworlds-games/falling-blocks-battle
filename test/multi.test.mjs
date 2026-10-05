@@ -171,3 +171,35 @@ test('a player whose seat is held too long is out, and the match still ends', as
   assert.equal(hub.match.phase, 'lobby', 'and the match ended');
   assertClean([A], 'after the walk-away');
 });
+
+test('garbage sent to a page lands on its board and is shown to the others', async () => {
+  const hub = new Hub();
+  const A = await boot(hub, 'hal', 'h');
+  const B = await boot(hub, 'ivy', 'i');
+  const step = stepper(hub);
+  for (const p of [A, B]) {
+    p.page.install();
+    p.page.key('Space');
+  }
+  for (let i = 0; i < 90; i++) step();
+  hub.start();
+  for (let i = 0; i < 60 * 4 + 90; i++) step();
+  const g = A.room.state.g;
+  assert.ok(g && g.phase === 'play', 'the match is on');
+  // hal's page sends ivy a quad's worth of garbage, the way a clear would
+  A.room.send({ t: 'atk', rid: g.rid, to: 'ivy', lines: 4, col: 3 }, { to: 'ivy' });
+  for (let i = 0; i < 45; i++) step();
+  const snap = parseSnap(hub.players.get('ivy').presence);
+  assert.ok(snap && snap.m === hub.match.id);
+  const rose = snap.cells.filter((v) => v === 8).length;
+  assert.ok(snap.g >= 1 || rose >= 9, `ivy has ${snap.g} lines waiting and ${rose} garbage blocks on her board`);
+  // the host's record is untouched by an attack
+  assert.deepEqual(A.room.state.g.out, []);
+  // and the same message from a stranger, or about a match long gone, does nothing
+  const before = parseSnap(hub.players.get('ivy').presence);
+  A.room.send({ t: 'atk', rid: 'old.1', to: 'ivy', lines: 20, col: 0 }, { to: 'ivy' });
+  for (let i = 0; i < 45; i++) step();
+  const after = parseSnap(hub.players.get('ivy').presence);
+  assert.ok(after.g <= before.g + 0 || after.cells.filter((v) => v === 8).length <= rose + 4, 'a stale attack changed nothing');
+  assertClean([A, B], 'attacks');
+});

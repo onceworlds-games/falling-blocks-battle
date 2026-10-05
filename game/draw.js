@@ -43,7 +43,9 @@ function drawBackground(ctx, Sc) {
   const t = Sc.time;
   const m = Math.min(w, h);
   const pulse = Sc.reduced ? 0 : Sc.pulse;
-  for (const s of shapes) {
+  const stride = Sc.q < 0.5 ? 2 : 1; // low quality draws half of the drifting shapes
+  for (let k = 0; k < shapes.length; k += stride) {
+    const s = shapes[k];
     const px = (((s.x + t * s.speed * s.depth) % 1.3) + 1.3) % 1.3;
     const x = (px - 0.15) * w;
     const y = (s.y + Math.sin(t * 0.2 * s.depth + s.x * 9) * 0.02) * h;
