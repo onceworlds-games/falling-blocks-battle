@@ -490,7 +490,7 @@ function drawStats(ctx, Sc, v) {
   let y = hold.y + hold.h + c * 0.9;
   const x = hold.x;
   const size = Math.max(10, c * 0.62);
-  text(ctx, 'LINES', x, y, size * 0.85, { color: '#9fc4ff', outline: 0 });
+  text(ctx, 'LINES', x, y, Math.max(10, size * 0.85), { color: '#9fc4ff', outline: 0 });
   text(ctx, String(hud.lines), x + hold.w, y, size * 1.15, { align: 'right' });
   y += c * 1.5;
   if (hud.combo >= 1) {

@@ -69,8 +69,8 @@ export function attackFor({ lines, tspin = 0, b2b = false, combo = 0, perfect = 
 /** Whether a clear is a "difficult" one (a quad or any T-spin that clears): the ones back-to-back counts. */
 export const isDifficult = (lines, tspin) => lines === 4 || (tspin > 0 && lines > 0);
 
-/** How much slower than full pace the bots play at `ms` into a match: they stack up first, like people do (1.9x slower at the start, full pace from 70 s). */
-export const warmUp = (ms) => 1 + 0.9 * Math.max(0, 1 - ms / 70000);
+/** How much slower than full pace the bots play `ms` into a match: they stack up first, like people do (2.4x slower at the start, full pace from two and a half minutes). */
+export const warmUp = (ms) => 1 + 1.4 * Math.max(0, 1 - ms / 150000);
 
 // ---------------------------------------------------------------- sudden death
 /** How many lines the sudden death has put on every board by `ms` of match time: one at eight minutes, then more every 10 s (1, 3, 6, 10...). */

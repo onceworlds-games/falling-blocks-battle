@@ -142,7 +142,7 @@ export class BotMatch {
     const gt = this.isolated ? Math.min(this.t, 25000) : this.t;
     const g = gravityAt(this.speed, gt);
     const due = suddenDue(gt);
-    const slow = warmUp(gt);
+    const slow = this.isolated ? 1 : warmUp(gt);
     for (const b of this.bots) {
       const e = b.engine;
       if (e.ko) {

@@ -578,7 +578,7 @@ function run(ow, room, tickable) {
   function makeTitleDemo(seed) {
     const roster = buildRoster([], seed, 8);
     const ref = new Referee(roster);
-    const bm = new BotMatch({ seed, roster, speed: 'fast', t: 45000, alive: () => ref.alive(), isOut: (id) => ref.isOut(id), onKo: (id, by) => ref.ko(id, by) });
+    const bm = new BotMatch({ seed, roster, speed: 'normal', t: 140000, alive: () => ref.alive(), isOut: (id) => ref.isOut(id), onKo: (id, by) => ref.ko(id, by) });
     return { seed, roster, ref, bm, overFor: 0 };
   }
   function makeLobbyDemo() {

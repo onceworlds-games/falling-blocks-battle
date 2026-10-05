@@ -27,8 +27,10 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 
 export function createInput(ow) {
   const das = new Das();
-  const held = { left: false, right: false, soft: false };
+  const down = new Set(); // codes of the keys held right now
   let lastDir = 0; // the direction key pressed most recently
+  let dirPresses = 0; // direction key presses so far (a release and a press between two polls is still a fresh press)
+  let seenPresses = 0;
   const counts = { hard: 0, cw: 0, ccw: 0, hold: 0 };
   const stamp = { hard: -1e9, cw: -1e9, ccw: -1e9, hold: -1e9 };
   const wasButton = { rotate: false, drop: false, hold: false, 'rotate-left': false };
@@ -38,27 +40,33 @@ export function createInput(ow) {
   let lastAny = -1e9;
   const out = { move: 0, soft: false, hard: 0, cw: 0, ccw: 0, hold: 0 };
 
-  // A key and a button saying the same thing within a moment are one press.
-  function trigger(action) {
+  // A button press arrives as a key event and also as a button held: the second reading of it, a moment later, is the same press.
+  function trigger(action, fromButton = false) {
     const t = now();
-    if (t - stamp[action] < 70) return;
+    if (fromButton && t - stamp[action] < 160) return;
     stamp[action] = t;
     counts[action] = Math.min(4, counts[action] + 1);
     lastAny = t;
   }
+
+  const anyDown = (set) => {
+    for (const c of set) if (down.has(c)) return true;
+    return false;
+  };
 
   function onKeyDown(e) {
     const code = e.code;
     if (!MINE.some((s) => s.has(code))) return;
     e.preventDefault?.();
     usedKeys = true;
-    if (LEFT.has(code)) {
-      if (!held.left) lastDir = -1;
-      held.left = true;
-    } else if (RIGHT.has(code)) {
-      if (!held.right) lastDir = 1;
-      held.right = true;
-    } else if (SOFT.has(code)) held.soft = true;
+    const fresh = !down.has(code);
+    down.add(code);
+    if (LEFT.has(code) || RIGHT.has(code)) {
+      if (fresh) {
+        lastDir = LEFT.has(code) ? -1 : 1;
+        dirPresses++;
+      }
+    } else if (SOFT.has(code)) return;
     else if (e.repeat) return;
     else if (HARD.has(code)) trigger('hard');
     else if (CW.has(code)) trigger('cw');
@@ -68,15 +76,13 @@ export function createInput(ow) {
 
   function onKeyUp(e) {
     const code = e.code;
-    if (LEFT.has(code)) held.left = false;
-    else if (RIGHT.has(code)) held.right = false;
-    else if (SOFT.has(code)) held.soft = false;
-    else return;
+    if (!down.has(code)) return;
+    down.delete(code);
     e.preventDefault?.();
   }
 
   function releaseAll() {
-    held.left = held.right = held.soft = false;
+    down.clear();
     lastDir = 0;
     stickDir = 0;
     stickSoft = false;
@@ -106,7 +112,7 @@ export function createInput(ow) {
     if (!c || typeof c.pressed !== 'function') return;
     for (const id of Object.keys(BUTTON_ACTION)) {
       const down = Boolean(c.pressed(id));
-      if (down && !wasButton[id]) trigger(BUTTON_ACTION[id]);
+      if (down && !wasButton[id]) trigger(BUTTON_ACTION[id], true);
       wasButton[id] = down;
     }
   }
@@ -127,16 +133,21 @@ export function createInput(ow) {
         out.soft = false;
         return out;
       }
+      const left = anyDown(LEFT);
+      const right = anyDown(RIGHT);
       let dir = 0;
       if (stickDir !== 0) dir = stickDir;
-      else if (held.left && held.right) dir = lastDir || -1;
-      else if (held.left) dir = -1;
-      else if (held.right) dir = 1;
+      else if (left && right) dir = lastDir || -1;
+      else if (left) dir = -1;
+      else if (right) dir = 1;
+      // a key let go and pressed again between two polls is a new press
+      if (dirPresses !== seenPresses && dir !== 0 && dir === das.dir && stickDir === 0 && dir === lastDir) das.reset();
+      seenPresses = dirPresses;
       // the other key was let go and this one is still down: carry on without a fresh step
-      if (dir !== 0 && das.dir === -dir && stickDir === 0 && !(dir === 1 ? held.left : held.right)) das.charge(dir);
+      if (dir !== 0 && das.dir === -dir && stickDir === 0 && !(dir === 1 ? left : right)) das.charge(dir);
       const steps = das.update(dir, dt);
       out.move = dir * steps;
-      out.soft = held.soft || stickSoft;
+      out.soft = anyDown(SOFT) || stickSoft;
       out.hard = counts.hard;
       out.cw = counts.cw;
       out.ccw = counts.ccw;
