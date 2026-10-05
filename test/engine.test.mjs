@@ -71,6 +71,27 @@ test('lock delay: half a second on the ground, restarted by moves up to fifteen 
   assert.ok(f.tick(100), 'so it locks 500 ms after the last restart');
 });
 
+test('a piece cannot be kept in the air for ever: once the restarts are used it locks the moment it lands again', () => {
+  const e = mk({ gravity: 30 });
+  put(e, T, 0, 3, 20);
+  for (let i = 0; i < 15; i++) {
+    e.tick(100);
+    e.move(i % 2 ? 1 : -1);
+  }
+  assert.equal(e.resets, 15);
+  e.cur.y = 17; // a turn kicked it up
+  e.fall = 0;
+  e.tick(1);
+  assert.equal(e.cur.y, 17, 'in the air');
+  const r = e.tick(100);
+  assert.ok(r, 'it landed and locked at once, without another half second');
+  const f = mk({ gravity: 30 });
+  put(f, T, 0, 3, 17);
+  f.tick(1);
+  assert.equal(f.tick(100), null, 'with its restarts unused it gets the full delay');
+  assert.ok(f.tick(450));
+});
+
 test('falling to a lower row gives the restarts back', () => {
   const e = mk();
   e.board.cells[19 * COLS + 1] = 5; // a ledge under column 1
@@ -447,4 +468,32 @@ test('L pieces and S pieces lock where they are with the right cells', () => {
   assert.equal(e.board.get(4, 21), L);
   assert.equal(e.board.get(5, 21), L);
   assert.equal(cellCount(e), 4);
+});
+
+test('sudden-death rows cannot be cancelled and rise after the next lock, clear or not', () => {
+  const e = mk();
+  e.forceGarbage(5);
+  e.forceGarbage(2);
+  e.receive(3, 1);
+  e.board.cells[10 * COLS] = 7;
+  for (let i = 0; i < 4; i++) row(e, 21 - i, [9]);
+  put(e, I, 1, 7, 18);
+  const r = e.hardDrop();
+  assert.equal(r.lines, 4);
+  assert.equal(r.cancelled, 3, 'a normal attack still cancels normal garbage');
+  assert.deepEqual(r.rise, [{ n: 1, col: 5 }, { n: 1, col: 2 }], 'the forced rows came up even though lines cleared');
+  assert.equal(e.board.get(2, 21), 0, 'the last row to come up has its hole at 2');
+  assert.equal(e.board.get(5, 20), 0, 'the one before at 5');
+  assert.equal(e.board.get(5, 21), GARBAGE);
+  assert.equal(e.board.get(0, 21), GARBAGE);
+  assert.equal(e.forced.length, 0);
+  const f = mk();
+  for (let i = 0; i < 6; i++) f.forceGarbage(i);
+  put(f, O, 0, 3, 15);
+  assert.equal(f.hardDrop().rise.length, 4, 'at most four at a time');
+  assert.equal(f.forced.length, 2);
+  const k = mk();
+  k.knockOut('block');
+  k.forceGarbage(3);
+  assert.equal(k.forced.length, 0);
 });

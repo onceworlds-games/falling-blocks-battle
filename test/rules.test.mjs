@@ -130,11 +130,13 @@ test('placement points go from 100 to 0 and ordinals read right', () => {
   assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 101].map(ordinal), ['1ST', '2ND', '3RD', '4TH', '11TH', '12TH', '13TH', '21ST', '22ND', '23RD', '101ST']);
 });
 
-test('sudden death puts a line on every board every ten seconds after eight minutes', () => {
+test('sudden death: rows that no attack can cancel, more every ten seconds after eight minutes', () => {
   assert.equal(suddenDue(0), 0);
   assert.equal(suddenDue(SUDDEN_MS - 1), 0);
   assert.equal(suddenDue(SUDDEN_MS), 1);
-  assert.equal(suddenDue(SUDDEN_MS + SUDDEN_EVERY), 2);
+  assert.equal(suddenDue(SUDDEN_MS + SUDDEN_EVERY), 3);
+  assert.equal(suddenDue(SUDDEN_MS + 2 * SUDDEN_EVERY), 6);
+  assert.equal(suddenDue(SUDDEN_MS + 5 * SUDDEN_EVERY), 21);
   assert.ok(CAP_MS > SUDDEN_MS + 6 * SUDDEN_EVERY);
   for (let i = 0; i < 40; i++) {
     const col = suddenCol(1234, i);

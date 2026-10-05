@@ -19,7 +19,7 @@ export class Engine {
     this.id = String(opts.id ?? '');
     this.seed = (opts.seed ?? 1) >>> 0;
     this.board = new Board();
-    this.bag = new Bag(mulberry32(hashStr(`${this.seed}:${this.id}:bag`)));
+    this.bag = this.makeBag();
     this.gravity = Number.isFinite(opts.gravity) ? opts.gravity : 1;
     this.cur = null; // { type, rot, x, y }
     this.hold = 0;
@@ -30,15 +30,21 @@ export class Engine {
     this.lowest = 0; // the lowest row the piece has reached
     this.lastRot = false; // the piece's last move was a turn (for T-spins)
     this.lastKick = 0;
+    this.air = false; // the piece was off the ground at the last tick
     this.combo = -1; // consecutive clears minus one (-1: none running)
     this.b2b = false;
     this.pending = []; // incoming garbage, oldest first: [{ n, col }]
+    this.forced = []; // sudden-death rows: hole columns of lines that rise after the next lock whatever happens
     this.ko = false;
     this.koReason = '';
     this.serial = 0; // counts spawns: a new number means a new piece
     this.time = 0; // ms this board has been ticked
     this.stats = { pieces: 0, lines: 0, sent: 0, recv: 0, quads: 0, tspins: 0, maxCombo: 0, perfect: 0 };
     if (opts.start !== false) this.spawn(0);
+  }
+
+  makeBag() {
+    return new Bag(mulberry32(hashStr(`${this.seed}:${this.id}:bag`)));
   }
 
   /** Pieces dealt from the bag so far. */
@@ -72,6 +78,7 @@ export class Engine {
     this.lockT = 0;
     this.resets = 0;
     this.fall = 0;
+    this.air = false;
     const c = this.cur;
     if (this.board.collides(t, 0, c.x, c.y)) {
       this.knockOut('block');
@@ -210,10 +217,15 @@ export class Engine {
       }
     }
     if (this.board.collides(c.type, c.rot, c.x, c.y + 1)) {
+      // Back on the ground after being lifted (a turn that kicked it up) with all the restarts used: it locks at once, so a piece
+      // can't be kept in the air for ever by turning it.
+      if (this.air && this.resets >= MAX_RESETS) this.lockT = LOCK_MS;
+      this.air = false;
       this.lockT += dt;
       if (this.lockT >= LOCK_MS) return this.lock();
     } else {
       this.lockT = 0;
+      this.air = true;
     }
     return null;
   }
@@ -261,6 +273,12 @@ export class Engine {
     this.pending.push({ n: take, col: Math.min(9, Math.max(0, Math.floor(Number.isFinite(col) ? col : 0))) });
     this.stats.recv += take;
     return take;
+  }
+
+  /** A sudden-death row: it can't be cancelled and rises (at most four at once) after the next lock, clear or not. */
+  forceGarbage(col) {
+    if (this.ko) return;
+    this.forced.push(Math.min(9, Math.max(0, Math.floor(Number.isFinite(col) ? col : 0))));
   }
 
   /**
@@ -337,6 +355,13 @@ export class Engine {
         }
       }
     }
+    if (this.forced.length > 0 && !reason) {
+      if (!res.rise) res.rise = [];
+      for (const col of this.forced.splice(0, 4)) {
+        res.rise.push({ n: 1, col });
+        if (b.addGarbage(1, col)) reason = 'garbage';
+      }
+    }
     this.canHold = true;
     this.cur = null;
     if (reason) this.knockOut(reason);
@@ -365,6 +390,7 @@ export class Engine {
   restore(snap) {
     this.board.cells.set(snap.cells);
     this.hold = snap.h;
+    this.bag = this.makeBag();
     this.bag.skip(snap.n);
     this.stats.sent = snap.sn;
     this.pending = snap.g > 0 ? [{ n: snap.g, col: (snap.n * 7 + snap.g) % 10 }] : [];

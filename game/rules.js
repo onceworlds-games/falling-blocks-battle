@@ -15,7 +15,7 @@ export const OVER_MS = 3200; // the winner's moment before the results
 export const FINAL_MS = 9000; // the results, then the host ends the match
 export const AWAY_KO_MS = 20000; // a player whose connection has been gone this long is out
 export const IDLE_KO_MS = 45000; // a player who hasn't touched the game this long is out
-export const SUDDEN_MS = 8 * 60 * 1000; // after this, every board gets a line of garbage every SUDDEN_EVERY
+export const SUDDEN_MS = 8 * 60 * 1000; // after this, every board gets rising lines that no attack can cancel, more every SUDDEN_EVERY
 export const SUDDEN_EVERY = 10000;
 export const CAP_MS = 14 * 60 * 1000; // the match ends whatever happens
 
@@ -73,9 +73,11 @@ export const isDifficult = (lines, tspin) => lines === 4 || (tspin > 0 && lines 
 export const warmUp = (ms) => 1 + 0.9 * Math.max(0, 1 - ms / 70000);
 
 // ---------------------------------------------------------------- sudden death
-/** How many lines of garbage the sudden death has put on every board by `ms` of match time. */
+/** How many lines the sudden death has put on every board by `ms` of match time: one at eight minutes, then more every 10 s (1, 3, 6, 10...). */
 export function suddenDue(ms) {
-  return ms < SUDDEN_MS ? 0 : 1 + Math.floor((ms - SUDDEN_MS) / SUDDEN_EVERY);
+  if (ms < SUDDEN_MS) return 0;
+  const k = 1 + Math.floor((ms - SUDDEN_MS) / SUDDEN_EVERY);
+  return (k * (k + 1)) / 2;
 }
 
 /** The hole of the `i`th sudden-death line: the same on every page. */
